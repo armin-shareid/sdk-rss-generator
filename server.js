@@ -170,7 +170,3 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
     res.status(500).send("Error generating RSS feed");
   }
 }
-
-app.listen(PORT, () => {
-  console.log(`🚀 RSS feed ready at ${RSS_URL}`);
-});
