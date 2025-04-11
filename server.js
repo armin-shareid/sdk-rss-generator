@@ -62,6 +62,11 @@ app.get(RSS_ANDROID_URL, async (req, res) => {
 });
 
 async function generateRssFeed(gitbookUrl, title, type, res) {
+  if (!gitbookUrl) {
+    console.error(`URL for ${type} feed is not defined`);
+    return res.status(500).send(`Error generating RSS feed: URL for ${type} SDK is not configured`);
+  }
+  
   let browser = null;
   try {
     browser = await puppeteer.launch({
@@ -82,55 +87,73 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
     const $ = cheerio.load(renderedHtml);
     const items = [];
 
-    // Iterate over each <details> element to distinguish between SDKs
-    $("details").each((i, detailsEl) => {
-      const sdkType = $(detailsEl).find("summary").text().trim();
+    // Extract based on the type of SDK documentation structure
+    if (type === "web") {
+      // Web SDK has <details> sections for different SDK types
+      $("details").each((i, detailsEl) => {
+        const sdkType = $(detailsEl).find("summary").text().trim();
+        parseVersions($(detailsEl), sdkType);
+      });
+    } else {
+      // iOS and Android SDKs have h2 elements directly in the page
+      parseVersions($("body"), title);
+    }
 
-      // Look for version titles (e.g., <h2>) and descriptions below them
-      $(detailsEl)
-        .find("h2")
-        .each((i, el) => {
-          const title = $(el).find("div.grid-area-1-1").text().trim();
+    function parseVersions(container, sdkType) {
+      container.find("h2").each((i, el) => {
+        const title = $(el).find("div.grid-area-1-1").text().trim();
+        
+        // Skip if the title is empty
+        if (!title) return;
 
-          // Attempt to find a stable anchor/link for the version
-          const anchor =
-            $(el).attr("id") ||
-            $(el).find("a[href^='#']").attr("href")?.substring(1) ||
-            "";
+        // Attempt to find a stable anchor/link for the version
+        const anchor = $(el).attr("id") || $(el).find("a[href^='#']").attr("href")?.substring(1) || "";
 
-          // Construct the link - Check if the base URL already has a fragment
-          const baseUrlWithoutFragment = gitbookUrl.split("#")[0];
-          const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
+        // Construct the link - Check if the base URL already has a fragment
+        const baseUrlWithoutFragment = gitbookUrl.split("#")[0];
+        const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
 
-          // Extract the full description including all <p> and <ul> elements until the next <h2>
-          let description = "";
-          $(el)
-            .nextUntil("h2")
-            .each((_, descEl) => {
-              if ($(descEl).is("p, ul")) {
-                description += $(descEl).text().trim() + "\n\n";
-              }
-            });
-
-          // Basic check if description is meaningful
-          if (!description.trim()) return;
-
-          // Use a fixed date for now, or find a way to extract date from page if possible
-          let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
-          const dateMatch = title.match(/(\d{4}\/\d{2}\/\d{2})/);
-          if (dateMatch && dateMatch[1]) {
-            try {
-              const parsedDate = new Date(dateMatch[1].replace(/\//g, "-"));
-              if (!isNaN(parsedDate)) {
-                pubDateStr = format(parsedDate, "EEE, dd MMM yyyy HH:mm:ss xx");
-              }
-            } catch (parseError) {
-              // Ignore if parsing fails, use current date
-            }
+        // Extract the full description including all <p> and <ul> elements until the next <h2>
+        let description = "";
+        let currentEl = $(el).next();
+        
+        while (currentEl.length && !currentEl.is("h2") && !currentEl.is("hr")) {
+          if (currentEl.is("p, ul")) {
+            description += currentEl.text().trim() + "\n\n";
           }
-          const pubDate = pubDateStr;
+          currentEl = currentEl.next();
+        }
 
-          items.push(`
+        // If we've hit an <hr>, check if there's a p and ul following it that belong to this section
+        if (currentEl.is("hr")) {
+          currentEl = currentEl.next();
+          while (currentEl.length && !currentEl.is("h2")) {
+            if (currentEl.is("p, ul")) {
+              description += currentEl.text().trim() + "\n\n";
+            }
+            currentEl = currentEl.next();
+          }
+        }
+
+        // Basic check if description is meaningful
+        if (!description.trim()) return;
+
+        // Use a fixed date for now, or find a way to extract date from page if possible
+        let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
+        const dateMatch = title.match(/(\d{4}\/\d{2}\/\d{2})/);
+        if (dateMatch && dateMatch[1]) {
+          try {
+            const parsedDate = new Date(dateMatch[1].replace(/\//g, "-"));
+            if (!isNaN(parsedDate)) {
+              pubDateStr = format(parsedDate, "EEE, dd MMM yyyy HH:mm:ss xx");
+            }
+          } catch (parseError) {
+            // Ignore if parsing fails, use current date
+          }
+        }
+        const pubDate = pubDateStr;
+
+        items.push(`
             <item>
               <title>${sdkType}: ${title}</title>
               <link>${link}</link>
@@ -138,8 +161,8 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
               <pubDate>${pubDate}</pubDate>
             </item>
           `);
-        });
-    });
+      });
+    }
 
     const feedUrls = {
       web: RSS_WEB_URL,
@@ -165,11 +188,11 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
     res.set("Content-Type", "application/rss+xml");
     res.send(rssFeed);
   } catch (error) {
-    console.error("Error generating RSS feed:", error);
+    console.error(`Error generating RSS feed for ${type}: ${error.message}`);
     if (browser) {
       await browser.close();
     }
-    res.status(500).send("Error generating RSS feed");
+    res.status(500).send(`Error generating RSS feed for ${title}: ${error.message}`);
   }
 }
 
