@@ -7,14 +7,16 @@ const fs = require("fs");
 const app = express();
 const PORT = 3000;
 
-// Add these lines to use the Railway domain
-const HOST_DOMAIN = process.env.RAILWAY_PUBLIC_DOMAIN || `localhost:${PORT}`;
-const PROTOCOL = process.env.RAILWAY_PUBLIC_DOMAIN ? "https" : "http";
+const HOST_DOMAIN = process.env.SHAREID_URL || `localhost:${PORT}`;
+const PROTOCOL = process.env.SHAREID_URL ? "https" : "http";
 const BASE_URL = `${PROTOCOL}://${HOST_DOMAIN}`;
-const RSS_URL = `${BASE_URL}/rss.xml`;
+const RSS_WEB_URL = `/rss-web.xml`;
+const RSS_IOS_URL = `/rss-ios.xml`;
+const RSS_ANDROID_URL = `/rss-android.xml`;
 
-const GITBOOK_URL =
-  "https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-web#onboarding-sdk";
+const GITBOOK_SDK_WEB_URL = process.env.GITBOOK_SDK_WEB_URL;
+const GITBOOK_SDK_IOS_URL = process.env.GITBOOK_SDK_IOS_URL;
+const GITBOOK_SDK_ANDROID_URL = process.env.GITBOOK_SDK_ANDROID_URL;
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -25,7 +27,39 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/rss.xml", async (req, res) => {
+app.get("/", (req, res) => {
+  fs.readFile(__dirname + "/index.html", "utf8", (err, data) => {
+    if (err) {
+      return res.status(500).send("Error loading page");
+    }
+
+    const html = data
+      .replace(/\{\{RSS_WEB_URL\}\}/g, `${BASE_URL}${RSS_WEB_URL}`)
+      .replace(/\{\{RSS_IOS_URL\}\}/g, `${BASE_URL}${RSS_IOS_URL}`)
+      .replace(/\{\{RSS_ANDROID_URL\}\}/g, `${BASE_URL}${RSS_ANDROID_URL}`);
+
+    res.send(html);
+  });
+});
+
+app.get(RSS_WEB_URL, async (req, res) => {
+  await generateRssFeed(GITBOOK_SDK_WEB_URL, "SDK Web Changelog", "web", res);
+});
+
+app.get(RSS_IOS_URL, async (req, res) => {
+  await generateRssFeed(GITBOOK_SDK_IOS_URL, "SDK iOS Changelog", "ios", res);
+});
+
+app.get(RSS_ANDROID_URL, async (req, res) => {
+  await generateRssFeed(
+    GITBOOK_SDK_ANDROID_URL,
+    "SDK Android Changelog",
+    "android",
+    res
+  );
+});
+
+async function generateRssFeed(gitbookUrl, title, type, res) {
   let browser = null;
   try {
     browser = await puppeteer.launch({
@@ -37,16 +71,13 @@ app.get("/rss.xml", async (req, res) => {
       ],
     });
     const page = await browser.newPage();
-    await page.goto(GITBOOK_URL, { waitUntil: "networkidle2" });
+    await page.goto(gitbookUrl, { waitUntil: "networkidle2" });
 
     const renderedHtml = await page.content();
-    console.log("renderedHtml", renderedHtml);
-
     await browser.close();
     browser = null;
 
     const $ = cheerio.load(renderedHtml);
-
     const items = [];
 
     // Iterate over each <details> element to distinguish between SDKs
@@ -66,7 +97,7 @@ app.get("/rss.xml", async (req, res) => {
             "";
 
           // Construct the link - Check if the base URL already has a fragment
-          const baseUrlWithoutFragment = GITBOOK_URL.split("#")[0];
+          const baseUrlWithoutFragment = gitbookUrl.split("#")[0];
           const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
 
           // Extract the full description including all <p> and <ul> elements until the next <h2>
@@ -108,22 +139,26 @@ app.get("/rss.xml", async (req, res) => {
         });
     });
 
+    const feedUrls = {
+      web: RSS_WEB_URL,
+      ios: RSS_IOS_URL,
+      android: RSS_ANDROID_URL,
+    };
+
+    const feedUrl = `${BASE_URL}${feedUrls[type]}`;
+
     const rssFeed = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>SDK Web Changelog</title>
-    <link>${GITBOOK_URL}</link>
-    <description>Latest updates to the SDK Web</description>
-    <language>en-us</language>
-    <atom:link href="${BASE_URL}/rss.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>${format(
-      new Date(),
-      "EEE, dd MMM yyyy HH:mm:ss xx"
-    )}</lastBuildDate>
-    ${items.join("\n")}
-  </channel>
-</rss>
-    `;
+            <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+                <channel>
+                    <title>${title}</title>
+                    <link>${gitbookUrl}</link>
+                    <description>Latest updates to the ${title}</description>
+                    <language>en-us</language>
+                    <atom:link href="${feedUrl}" rel="self" type="application/rss+xml" />
+                    <lastBuildDate>${format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx")}</lastBuildDate>
+                    ${items.join("\n")}
+                </channel>
+            </rss>`;
 
     res.set("Content-Type", "application/rss+xml");
     res.send(rssFeed);
@@ -134,21 +169,8 @@ app.get("/rss.xml", async (req, res) => {
     }
     res.status(500).send("Error generating RSS feed");
   }
-});
-
-app.get("/", (req, res) => {
-  fs.readFile(__dirname + "/index.html", "utf8", (err, data) => {
-    if (err) {
-      return res.status(500).send("Error loading page");
-    }
-
-    // Replace all instances of the placeholder with the actual URL
-    const html = data.replace(/\{\{RSS_URL\}\}/g, RSS_URL);
-
-    res.send(html);
-  });
-});
+}
 
 app.listen(PORT, () => {
-  console.log(`🚀 RSS feed ready at http://localhost:${PORT}/rss.xml`);
+  console.log(`🚀 RSS feed ready at ${RSS_URL}`);
 });
