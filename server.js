@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require("express");
 const cheerio = require("cheerio");
 const { format } = require("date-fns");
@@ -170,3 +172,9 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
     res.status(500).send("Error generating RSS feed");
   }
 }
+
+app.listen(PORT, () => {
+  console.log(`🚀 RSS feed ready at ${BASE_URL}${RSS_WEB_URL}`);
+  console.log(`🚀 RSS feed ready at ${BASE_URL}${RSS_IOS_URL}`);
+  console.log(`🚀 RSS feed ready at ${BASE_URL}${RSS_ANDROID_URL}`);
+});
