@@ -110,53 +110,77 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         const baseUrlWithoutFragment = gitbookUrl.split("#")[0];
         const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
 
-        let description = '<div style="font-family: sans-serif; line-height: 1.5;">';
+        // Initialize description parts array
+        let descriptionParts = [];
+        let currentSection = "";
         let currentEl = $(el).next();
         
         while (currentEl.length && !currentEl.is("h2") && !currentEl.is("hr")) {
           if (currentEl.is("p")) {
             const text = currentEl.text().trim();
             if (text.includes("🚀") || text.includes("🛠")) {
-              // Add extra spacing for section headers
-              description += `<h3 style="margin: 1.5em 0 0.5em 0;">${text}</h3>`;
+              // Add extra newline before new section if not first section
+              if (descriptionParts.length > 0) {
+                descriptionParts.push("");
+              }
+              descriptionParts.push(text);
+              descriptionParts.push(""); // Add empty line after section header
+              currentSection = text;
             } else {
-              description += `<p style="margin: 0.5em 0;">${text}</p>`;
+              descriptionParts.push(text);
             }
           } else if (currentEl.is("ul")) {
-            description += '<ul style="margin: 0.5em 0; padding-left: 2em;">';
+            const listItems = [];
             currentEl.find("li").each((_, li) => {
-              description += `<li style="margin: 0.3em 0;">${$(li).text().trim()}</li>`;
+              listItems.push(`• ${$(li).text().trim()}`);
             });
-            description += '</ul>';
+            if (listItems.length > 0) {
+              descriptionParts.push(listItems.join("\n"));
+              descriptionParts.push(""); // Add empty line after list
+            }
           }
           currentEl = currentEl.next();
         }
 
+        // Handle content after <hr> if present
         if (currentEl.is("hr")) {
           currentEl = currentEl.next();
           while (currentEl.length && !currentEl.is("h2")) {
             if (currentEl.is("p")) {
               const text = currentEl.text().trim();
               if (text.includes("🚀") || text.includes("🛠")) {
-                description += `<h3 style="margin: 1.5em 0 0.5em 0;">${text}</h3>`;
+                // Add extra newline before new section
+                descriptionParts.push("");
+                descriptionParts.push(text);
+                descriptionParts.push(""); // Add empty line after section header
+                currentSection = text;
               } else {
-                description += `<p style="margin: 0.5em 0;">${text}</p>`;
+                descriptionParts.push(text);
               }
             } else if (currentEl.is("ul")) {
-              description += '<ul style="margin: 0.5em 0; padding-left: 2em;">';
+              const listItems = [];
               currentEl.find("li").each((_, li) => {
-                description += `<li style="margin: 0.3em 0;">${$(li).text().trim()}</li>`;
+                listItems.push(`• ${$(li).text().trim()}`);
               });
-              description += '</ul>';
+              if (listItems.length > 0) {
+                descriptionParts.push(listItems.join("\n"));
+                descriptionParts.push(""); // Add empty line after list
+              }
             }
             currentEl = currentEl.next();
           }
         }
 
-        description += '</div>';
+        // Remove any trailing empty lines
+        while (descriptionParts.length > 0 && descriptionParts[descriptionParts.length - 1] === "") {
+          descriptionParts.pop();
+        }
 
         // Skip if no meaningful content
-        if (description === '<div style="font-family: sans-serif; line-height: 1.5;"></div>') return;
+        if (descriptionParts.length === 0) return;
+
+        // Join with double newlines to ensure proper spacing
+        const description = descriptionParts.join("\n");
 
         let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
         const dateMatch = title.match(/(\d{4}\/\d{2}\/\d{2})/);
@@ -182,6 +206,8 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
           `);
       });
     }
+
+    console.log(items);
 
     const feedUrls = {
       web: RSS_WEB_URL,
