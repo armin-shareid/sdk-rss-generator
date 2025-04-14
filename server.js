@@ -90,7 +90,7 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
     // Extract based on the type of SDK documentation structure
     if (type === "web") {
       // Web SDK has <details> sections for different SDK types
-      $("details").first().each((i, detailsEl) => {
+      $("details").each((i, detailsEl) => {
         const sdkType = $(detailsEl).find("summary").text().trim();
         parseVersions($(detailsEl), sdkType);
       });
@@ -100,7 +100,7 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
     }
 
     function parseVersions(container, sdkType) {
-      container.find("h2").first().each((i, el) => {
+      container.find("h2").each((i, el) => {
         const title = $(el).find("div.grid-area-1-1").text().trim();
         
         // Skip if the title is empty
