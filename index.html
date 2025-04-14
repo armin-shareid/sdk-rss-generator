@@ -5,10 +5,17 @@
   </head>
   <body>
     <h1>Subscribe to SDK Updates</h1>
-    <p>RSS Feed for SDK Web: <strong>{{RSS_WEB_URL}}</strong></p>
-    <p>RSS Feed for SDK iOS: <strong>{{RSS_IOS_URL}}</strong></p>
-    <p>RSS Feed for SDK Android: <strong>{{RSS_ANDROID_URL}}</strong></p>
-
+    <div class="feed-container">
+      <p>RSS Feed for SDK Web: <strong>{{RSS_WEB_URL}}</strong> 
+        <button class="copy-btn" onclick="copyToClipboard('{{RSS_WEB_URL}}')">Copy URL</button>
+      </p>
+      <p>RSS Feed for SDK iOS: <strong>{{RSS_IOS_URL}}</strong> 
+        <button class="copy-btn" onclick="copyToClipboard('{{RSS_IOS_URL}}')">Copy URL</button>
+      </p>
+      <p>RSS Feed for SDK Android: <strong>{{RSS_ANDROID_URL}}</strong> 
+        <button class="copy-btn" onclick="copyToClipboard('{{RSS_ANDROID_URL}}')">Copy URL</button>
+      </p>
+    </div>
     <h2>How to Subscribe:</h2>
     <ol>
       <li>Copy the RSS Feed URL above</li>
@@ -51,4 +58,11 @@
       </li>
     </ul>
   </body>
+  <script>
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+    }
+  </script>
 </html>
