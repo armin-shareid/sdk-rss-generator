@@ -106,82 +106,60 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         // Skip if the title is empty
         if (!title) return;
 
+        // Attempt to find a stable anchor/link for the version
         const anchor = $(el).attr("id") || $(el).find("a[href^='#']").attr("href")?.substring(1) || "";
+
+        // Construct the link - Check if the base URL already has a fragment
         const baseUrlWithoutFragment = gitbookUrl.split("#")[0];
         const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
 
-        // Initialize description parts array
-        let descriptionParts = [];
-        let currentSection = "";
+        // Extract the full description including all <p> and <ul> elements until the next <h2>
+        let description = [];
         let currentEl = $(el).next();
         
         while (currentEl.length && !currentEl.is("h2") && !currentEl.is("hr")) {
           if (currentEl.is("p")) {
-            const text = currentEl.text().trim();
-            if (text.includes("🚀") || text.includes("🛠")) {
-              // Add extra newline before new section if not first section
-              if (descriptionParts.length > 0) {
-                descriptionParts.push("");
-              }
-              descriptionParts.push(text);
-              descriptionParts.push(""); // Add empty line after section header
-              currentSection = text;
-            } else {
-              descriptionParts.push(text);
-            }
+            // Add paragraphs as separate entries
+            description.push(currentEl.text().trim());
           } else if (currentEl.is("ul")) {
+            // Handle list items individually
             const listItems = [];
             currentEl.find("li").each((_, li) => {
-              listItems.push(`• ${$(li).text().trim()}`);
+              listItems.push($(li).text().trim());
             });
             if (listItems.length > 0) {
-              descriptionParts.push(listItems.join("\n"));
-              descriptionParts.push(""); // Add empty line after list
+              description.push(listItems.join("\n"));
             }
           }
           currentEl = currentEl.next();
         }
 
-        // Handle content after <hr> if present
+        // If we've hit an <hr>, check if there's a p and ul following it that belong to this section
         if (currentEl.is("hr")) {
           currentEl = currentEl.next();
           while (currentEl.length && !currentEl.is("h2")) {
             if (currentEl.is("p")) {
-              const text = currentEl.text().trim();
-              if (text.includes("🚀") || text.includes("🛠")) {
-                // Add extra newline before new section
-                descriptionParts.push("");
-                descriptionParts.push(text);
-                descriptionParts.push(""); // Add empty line after section header
-                currentSection = text;
-              } else {
-                descriptionParts.push(text);
-              }
+              description.push(currentEl.text().trim());
             } else if (currentEl.is("ul")) {
               const listItems = [];
               currentEl.find("li").each((_, li) => {
-                listItems.push(`• ${$(li).text().trim()}`);
+                listItems.push($(li).text().trim());
               });
               if (listItems.length > 0) {
-                descriptionParts.push(listItems.join("\n"));
-                descriptionParts.push(""); // Add empty line after list
+                description.push(listItems.join("\n"));
               }
             }
             currentEl = currentEl.next();
           }
         }
 
-        // Remove any trailing empty lines
-        while (descriptionParts.length > 0 && descriptionParts[descriptionParts.length - 1] === "") {
-          descriptionParts.pop();
-        }
+        // Basic check if description is meaningful
+        if (description.length === 0) return;
 
-        // Skip if no meaningful content
-        if (descriptionParts.length === 0) return;
+        // Join the description sections with double newlines
+        const formattedDescription = description.join("\n\n");
 
-        // Join with double newlines to ensure proper spacing
-        const description = descriptionParts.join("\n");
-
+        // Use a fixed date for now, or find a way to extract date from page if possible
         let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
         const dateMatch = title.match(/(\d{4}\/\d{2}\/\d{2})/);
         if (dateMatch && dateMatch[1]) {
@@ -200,7 +178,7 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
             <item>
               <title>${sdkType}: ${title}</title>
               <link>${link}</link>
-              <description><![CDATA[${description}]]></description>
+              <description><![CDATA[${formattedDescription}]]></description>
               <pubDate>${pubDate}</pubDate>
             </item>
           `);
