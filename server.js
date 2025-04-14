@@ -120,15 +120,15 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         while (currentEl.length && !currentEl.is("h2") && !currentEl.is("hr")) {
           if (currentEl.is("p")) {
             // Add paragraphs as separate entries
-            description.push(`<p>${currentEl.text().trim()}</p>`);
+            description.push(currentEl.text().trim());
           } else if (currentEl.is("ul")) {
-            // Handle list items with HTML tags
+            // Handle list items individually
             const listItems = [];
             currentEl.find("li").each((_, li) => {
-              listItems.push(`<li>${$(li).text().trim()}</li>`);
+              listItems.push($(li).text().trim());
             });
             if (listItems.length > 0) {
-              description.push(`<ul>${listItems.join("")}</ul>`);
+              description.push(listItems.join("\n"));
             }
           }
           currentEl = currentEl.next();
@@ -139,14 +139,14 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
           currentEl = currentEl.next();
           while (currentEl.length && !currentEl.is("h2")) {
             if (currentEl.is("p")) {
-              description.push(`<p>${currentEl.text().trim()}</p>`);
+              description.push(currentEl.text().trim());
             } else if (currentEl.is("ul")) {
               const listItems = [];
               currentEl.find("li").each((_, li) => {
-                listItems.push(`<li>${$(li).text().trim()}</li>`);
+                listItems.push($(li).text().trim());
               });
               if (listItems.length > 0) {
-                description.push(`<ul>${listItems.join("")}</ul>`);
+                description.push(listItems.join("\n"));
               }
             }
             currentEl = currentEl.next();
@@ -156,8 +156,8 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         // Basic check if description is meaningful
         if (description.length === 0) return;
 
-        // Join the description sections with newlines
-        const formattedDescription = description.join("\n");
+        // Join the description sections with double newlines
+        const formattedDescription = description.join("\n\n");
 
         // Use a fixed date for now, or find a way to extract date from page if possible
         let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
