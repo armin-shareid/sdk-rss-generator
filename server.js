@@ -114,12 +114,22 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
 
         // Extract the full description including all <p> and <ul> elements until the next <h2>
-        let description = "";
+        let description = [];
         let currentEl = $(el).next();
         
         while (currentEl.length && !currentEl.is("h2") && !currentEl.is("hr")) {
-          if (currentEl.is("p, ul")) {
-            description += currentEl.text().trim() + "\n\n";
+          if (currentEl.is("p")) {
+            // Add paragraphs as separate entries
+            description.push(`<p>${currentEl.text().trim()}</p>`);
+          } else if (currentEl.is("ul")) {
+            // Handle list items with HTML tags
+            const listItems = [];
+            currentEl.find("li").each((_, li) => {
+              listItems.push(`<li>${$(li).text().trim()}</li>`);
+            });
+            if (listItems.length > 0) {
+              description.push(`<ul>${listItems.join("")}</ul>`);
+            }
           }
           currentEl = currentEl.next();
         }
@@ -128,15 +138,26 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         if (currentEl.is("hr")) {
           currentEl = currentEl.next();
           while (currentEl.length && !currentEl.is("h2")) {
-            if (currentEl.is("p, ul")) {
-              description += currentEl.text().trim() + "\n\n";
+            if (currentEl.is("p")) {
+              description.push(`<p>${currentEl.text().trim()}</p>`);
+            } else if (currentEl.is("ul")) {
+              const listItems = [];
+              currentEl.find("li").each((_, li) => {
+                listItems.push(`<li>${$(li).text().trim()}</li>`);
+              });
+              if (listItems.length > 0) {
+                description.push(`<ul>${listItems.join("")}</ul>`);
+              }
             }
             currentEl = currentEl.next();
           }
         }
 
         // Basic check if description is meaningful
-        if (!description.trim()) return;
+        if (description.length === 0) return;
+
+        // Join the description sections with newlines
+        const formattedDescription = description.join("\n");
 
         // Use a fixed date for now, or find a way to extract date from page if possible
         let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
@@ -157,7 +178,7 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
             <item>
               <title>${sdkType}: ${title}</title>
               <link>${link}</link>
-              <description><![CDATA[${description.trim()}]]></description>
+              <description><![CDATA[${formattedDescription}]]></description>
               <pubDate>${pubDate}</pubDate>
             </item>
           `);
