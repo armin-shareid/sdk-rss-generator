@@ -106,60 +106,58 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         // Skip if the title is empty
         if (!title) return;
 
-        // Attempt to find a stable anchor/link for the version
         const anchor = $(el).attr("id") || $(el).find("a[href^='#']").attr("href")?.substring(1) || "";
-
-        // Construct the link - Check if the base URL already has a fragment
         const baseUrlWithoutFragment = gitbookUrl.split("#")[0];
         const link = `${baseUrlWithoutFragment}${anchor ? "#" + anchor : ""}`;
 
-        // Extract the full description including all <p> and <ul> elements until the next <h2>
-        let description = [];
+        let description = '<div style="font-family: sans-serif; line-height: 1.5;">';
         let currentEl = $(el).next();
         
         while (currentEl.length && !currentEl.is("h2") && !currentEl.is("hr")) {
           if (currentEl.is("p")) {
-            // Add paragraphs as separate entries
-            description.push(currentEl.text().trim());
-          } else if (currentEl.is("ul")) {
-            // Handle list items individually
-            const listItems = [];
-            currentEl.find("li").each((_, li) => {
-              listItems.push($(li).text().trim());
-            });
-            if (listItems.length > 0) {
-              description.push(listItems.join("\n"));
+            const text = currentEl.text().trim();
+            if (text.includes("🚀") || text.includes("🛠")) {
+              // Add extra spacing for section headers
+              description += `<h3 style="margin: 1.5em 0 0.5em 0;">${text}</h3>`;
+            } else {
+              description += `<p style="margin: 0.5em 0;">${text}</p>`;
             }
+          } else if (currentEl.is("ul")) {
+            description += '<ul style="margin: 0.5em 0; padding-left: 2em;">';
+            currentEl.find("li").each((_, li) => {
+              description += `<li style="margin: 0.3em 0;">${$(li).text().trim()}</li>`;
+            });
+            description += '</ul>';
           }
           currentEl = currentEl.next();
         }
 
-        // If we've hit an <hr>, check if there's a p and ul following it that belong to this section
         if (currentEl.is("hr")) {
           currentEl = currentEl.next();
           while (currentEl.length && !currentEl.is("h2")) {
             if (currentEl.is("p")) {
-              description.push(currentEl.text().trim());
-            } else if (currentEl.is("ul")) {
-              const listItems = [];
-              currentEl.find("li").each((_, li) => {
-                listItems.push($(li).text().trim());
-              });
-              if (listItems.length > 0) {
-                description.push(listItems.join("\n"));
+              const text = currentEl.text().trim();
+              if (text.includes("🚀") || text.includes("🛠")) {
+                description += `<h3 style="margin: 1.5em 0 0.5em 0;">${text}</h3>`;
+              } else {
+                description += `<p style="margin: 0.5em 0;">${text}</p>`;
               }
+            } else if (currentEl.is("ul")) {
+              description += '<ul style="margin: 0.5em 0; padding-left: 2em;">';
+              currentEl.find("li").each((_, li) => {
+                description += `<li style="margin: 0.3em 0;">${$(li).text().trim()}</li>`;
+              });
+              description += '</ul>';
             }
             currentEl = currentEl.next();
           }
         }
 
-        // Basic check if description is meaningful
-        if (description.length === 0) return;
+        description += '</div>';
 
-        // Join the description sections with double newlines
-        const formattedDescription = description.join("\n\n");
+        // Skip if no meaningful content
+        if (description === '<div style="font-family: sans-serif; line-height: 1.5;"></div>') return;
 
-        // Use a fixed date for now, or find a way to extract date from page if possible
         let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
         const dateMatch = title.match(/(\d{4}\/\d{2}\/\d{2})/);
         if (dateMatch && dateMatch[1]) {
@@ -178,7 +176,7 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
             <item>
               <title>${sdkType}: ${title}</title>
               <link>${link}</link>
-              <description><![CDATA[${formattedDescription}]]></description>
+              <description><![CDATA[${description}]]></description>
               <pubDate>${pubDate}</pubDate>
             </item>
           `);
