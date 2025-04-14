@@ -125,10 +125,11 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
             // Handle list items individually
             const listItems = [];
             currentEl.find("li").each((_, li) => {
-              listItems.push($(li).text().trim());
+              const formattedLi = $(li).text().trim().split("\n").join(" ");
+              listItems.push(formattedLi);
             });
             if (listItems.length > 0) {
-              description.push(listItems.join("\n\n"));
+              description.push(listItems.join("\n"));
             }
           }
           currentEl = currentEl.next();
@@ -143,10 +144,11 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
             } else if (currentEl.is("ul")) {
               const listItems = [];
               currentEl.find("li").each((_, li) => {
-                listItems.push($(li).text().trim());
+                const formattedLi = $(li).text().trim().split("\n").join(" ");
+                listItems.push(formattedLi);
               });
               if (listItems.length > 0) {
-                description.push(listItems.join("\n\n"));
+                description.push(listItems.join("\n"));
               }
             }
             currentEl = currentEl.next();
@@ -157,7 +159,7 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
         if (description.length === 0) return;
 
         // Join the description sections with double newlines
-        const formattedDescription = description.join("\n\n\n").replace(/\n/g, "<br />");
+        const formattedDescription = description.join("\n\n");
 
         // Use a fixed date for now, or find a way to extract date from page if possible
         let pubDateStr = format(new Date(), "EEE, dd MMM yyyy HH:mm:ss xx");
