@@ -126,10 +126,10 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
             const listItems = [];
             currentEl.find("li").each((_, li) => {
               const formattedLi = $(li).text().trim().split("\n").join(" ");
-              listItems.push(formattedLi);
+              listItems.push(`<li>${formattedLi}</li>`);
             });
             if (listItems.length > 0) {
-              description.push(listItems.join("\n"));
+              description.push(`<ul>${listItems.join("\n")}</ul>`);
             }
           }
           currentEl = currentEl.next();
@@ -145,10 +145,10 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
               const listItems = [];
               currentEl.find("li").each((_, li) => {
                 const formattedLi = $(li).text().trim().split("\n").join(" ");
-                listItems.push(formattedLi);
+                listItems.push(`<li>${formattedLi}</li>`);
               });
               if (listItems.length > 0) {
-                description.push(listItems.join("\n"));
+                description.push(`<ul>${listItems.join("\n")}</ul>`);
               }
             }
             currentEl = currentEl.next();
