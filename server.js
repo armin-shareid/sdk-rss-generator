@@ -20,6 +20,12 @@ const GITBOOK_SDK_WEB_URL = process.env.GITBOOK_SDK_WEB_URL;
 const GITBOOK_SDK_IOS_URL = process.env.GITBOOK_SDK_IOS_URL;
 const GITBOOK_SDK_ANDROID_URL = process.env.GITBOOK_SDK_ANDROID_URL;
 
+const RSS_FILE_PATHS = {
+  web: 'latest_web_changelog_rss.xml',
+  ios: 'latest_ios_changelog_rss.xml',
+  android: 'latest_android_changelog_rss.xml'
+};
+
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -60,6 +66,92 @@ app.get(RSS_ANDROID_URL, async (req, res) => {
     res
   );
 });
+
+function saveRssToFile(content, type) {
+  const filePath = RSS_FILE_PATHS[type];
+  fs.writeFile(filePath, content, (err) => {
+    if (err) {
+      console.error(`Error saving ${type} RSS feed to file:`, err);
+    } else {
+      console.log(`✅ ${type.toUpperCase()} RSS feed saved to ${filePath}`);
+    }
+  });
+}
+
+function fileExists(filePath) {
+  return new Promise((resolve) => {
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+      resolve(!err);
+    });
+  });
+}
+
+function readFile(filePath) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filePath, 'utf8', (err, data) => {
+      if (err) reject(err);
+      else resolve(data);
+    });
+  });
+}
+
+function extractItems(rssContent) {
+  const items = [];
+  const itemRegex = /<item>[\s\S]*?<title>(.*?)<\/title>[\s\S]*?<link>(.*?)<\/link>[\s\S]*?<pubDate>(.*?)<\/pubDate>[\s\S]*?<\/item>/g;
+  let match;
+  
+  while ((match = itemRegex.exec(rssContent)) !== null) {
+    items.push({
+      title: match[1],
+      link: match[2],
+      pubDate: match[3]
+    });
+  }
+  
+  return items;
+}
+
+function findNewItems(newItems, oldItems) {
+  return newItems.filter(newItem => 
+    !oldItems.some(oldItem => 
+      oldItem.title === newItem.title && 
+      oldItem.link === newItem.link
+    )
+  );
+}
+
+async function compareAndSaveRss(newRssFeed, type) {
+  const filePath = RSS_FILE_PATHS[type];
+  const exists = await fileExists(filePath);
+  
+  if (!exists) {
+    console.log(`📄 Creating new ${type} RSS feed file`);
+    saveRssToFile(newRssFeed, type);
+    return extractItems(newRssFeed);
+  }
+  
+  try {
+    const oldRssFeed = await readFile(filePath);
+    
+    const newItems = extractItems(newRssFeed);
+    const oldItems = extractItems(oldRssFeed);
+    
+    const addedItems = findNewItems(newItems, oldItems);
+    
+    if (addedItems.length > 0) {
+      console.log(`🔄 Found ${addedItems.length} new items in ${type} feed`);
+      saveRssToFile(newRssFeed, type);
+      return addedItems;
+    } else {
+      console.log(`✓ No changes in ${type} RSS feed`);
+      return [];
+    }
+  } catch (error) {
+    console.error(`Error comparing ${type} RSS feeds:`, error);
+    saveRssToFile(newRssFeed, type);
+    return [];
+  }
+}
 
 async function generateRssFeed(gitbookUrl, title, type, res) {
   if (!gitbookUrl) {
@@ -210,6 +302,13 @@ async function generateRssFeed(gitbookUrl, title, type, res) {
 
     res.set("Content-Type", "application/rss+xml");
     res.send(rssFeed);
+    
+    const newItems = await compareAndSaveRss(rssFeed, type);
+    
+    if (newItems.length > 0) {
+      console.log(`New ${type} items:`, newItems.map(item => item.title).join(', '));
+    }
+    
   } catch (error) {
     console.error(`Error generating RSS feed for ${type}: ${error.message}`);
     if (browser) {

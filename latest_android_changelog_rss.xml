@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SDK Android Changelog</title>
+    <link>https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-android</link>
+    <description>Latest updates to the SDK Android Changelog</description>
+    <language>en-us</language>
+    <atom:link href="http://localhost:3000/rss-android.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 23 Apr 2025 17:57:35 +0200</lastBuildDate>
+
+    <item>
+      <title>SDK Android Changelog: Latest 2.4.1 - 2025/03/27</title>
+      <link>
+        https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-android#latest-2.4.1-2025-03-27</link>
+      <description><![CDATA[🚀 New Features & Improvements
+
+<ul><li>Ability to deselect a country</li>
+<li>Better management of cancelled actions in capture</li></ul>
+
+🛠 Fixes
+
+<ul><li>New label translations</li>
+<li>Correction of error feedback</li>
+<li>Bug fixes</li></ul>]]></description>
+      <pubDate>Thu, 27 Mar 2025 01:00:00 +0100</pubDate>
+    </item>
+
+
+    <item>
+      <title>SDK Android Changelog: 2.4.0 - 2025/03/21</title>
+      <link>https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-android#id-2.4.0-2025-03-21</link>
+      <description><![CDATA[🚀 New Features & Improvements
+
+<ul><li>Optimised API call management</li>
+<li>Added support for NO_HAND & NO_FACE error management</li>
+<li>Enhanced back navigation events</li>
+<li>Improved retry management</li></ul>
+
+🛠 Fixes
+
+<ul><li>Fixed country sorting (accent-sensitive sorting now considered)</li>
+<li>Corrected default language</li>
+<li>Fixed OUT_FRAME error handling</li></ul>]]></description>
+      <pubDate>Fri, 21 Mar 2025 01:00:00 +0100</pubDate>
+    </item>
+
+
+    <item>
+      <title>SDK Android Changelog: 2.3.43 - 2025/03/06</title>
+      <link>
+        https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-android#id-2.3.43-2025-03-06</link>
+      <description><![CDATA[🚀 New Features & Improvements
+
+<ul><li>Improved of capture management</li>
+<li>Added WRONG_DOCUMENT error handling</li></ul>
+
+🛠 Fixes
+
+<ul><li>Fixed error reporting</li>
+<li>Corrected asset upload percentage calculation</li></ul>]]></description>
+      <pubDate>Thu, 06 Mar 2025 01:00:00 +0100</pubDate>
+    </item>
+
+  </channel>
+</rss>
