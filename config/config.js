@@ -1,12 +1,9 @@
 require('dotenv').config();
-const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const HOST_DOMAIN = process.env.SHAREID_URL || `localhost:${PORT}`;
 const PROTOCOL = process.env.SHAREID_URL ? "https" : "http";
 const BASE_URL = `${PROTOCOL}://${HOST_DOMAIN}`;
-
-const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 module.exports = {
     PORT,
@@ -20,9 +17,9 @@ module.exports = {
     GITBOOK_SDK_IOS_URL: process.env.GITBOOK_SDK_IOS_URL, 
     GITBOOK_SDK_ANDROID_URL: process.env.GITBOOK_SDK_ANDROID_URL,
     RSS_FILE_PATHS: {
-      web: path.join(PROJECT_ROOT, "latest_web_changelog_rss.xml"),
-      ios: path.join(PROJECT_ROOT, "latest_ios_changelog_rss.xml"),
-      android: path.join(PROJECT_ROOT, "latest_android_changelog_rss.xml"),
+      web: "latest_web_changelog_rss.xml",
+      ios: "latest_ios_changelog_rss.xml",
+      android: "latest_android_changelog_rss.xml",
     },
     EMAIL_CONFIG: {
       enabled: process.env.EMAIL_ENABLED === "true",
