@@ -71,6 +71,10 @@ router.get("/test-email", async (req, res) => {
   }
 });
 
+router.get("/ping", (req, res) => {
+  res.send("pong");
+});
+
 // Helper function for generating RSS feeds
 async function generateRssFeed(gitbookUrl, title, type, res) {
   if (!gitbookUrl) {

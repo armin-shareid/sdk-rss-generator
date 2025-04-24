@@ -8,6 +8,8 @@ const app = express();
 initializeEmailTransporter();
 
 app.use((req, res, next) => {
+  const memoryUsage = process.memoryUsage();
+  console.log(`Memory usage: ${memoryUsage.heapUsed / 1024 / 1024} MB`);
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
     "Access-Control-Allow-Headers",
@@ -18,7 +20,9 @@ app.use((req, res, next) => {
 
 app.use("/", routes);
 
-app.listen(config.PORT, () => {
+const server = app.listen(config.PORT, '0.0.0.0', () => {
+  const address = server.address();
+  console.log(`Server listening on ${address.address}:${address.port}`);
   console.log(`🚀 RSS feed ready at ${config.BASE_URL}${config.RSS_WEB_URL}`);
   console.log(`🚀 RSS feed ready at ${config.BASE_URL}${config.RSS_IOS_URL}`);
   console.log(`🚀 RSS feed ready at ${config.BASE_URL}${config.RSS_ANDROID_URL}`);
