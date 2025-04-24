@@ -9,28 +9,6 @@
     <lastBuildDate>Wed, 23 Apr 2025 18:20:20 +0200</lastBuildDate>
 
     <item>
-      <title>Onboarding SDK: Latest 3.0.1 - 2025/03/27</title>
-      <link>https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-web#latest-3.0.1-2025-03-27</link>
-      <description><![CDATA[🚀 New Features & Improvements
-
-<ul><li>Added a new message handler to indicate the success, failure, or exit of the SDK process. Includes details about the step where the event occurred and a code describing the situation</li>
-<li>Extended challenge configuration to support screenshot handling with adjustable compression rates.</li>
-<li>Updated challenge configuration to include video handling with dynamic resolution adjustments</li>
-<li>Improved document scanning feedback with clearer error messages and enhanced user guidance</li>
-<li>Improved challenge handling with dynamic resolution switching</li>
-<li>Added a new transition overlay to enhance visual effects during animations</li>
-<li>Updated video resolution settings to 1080p for improved quality</li></ul>
-
-🛠 Fixes
-
-<ul><li>Ensured timestamp is only updated when the media recorder is inactive to avoid inaccuracies</li>
-<li>Adjusted video constraints to use dynamic screenshot resolution</li>
-<li>Removed Polish language support from multilingual translations</li></ul>]]></description>
-      <pubDate>Thu, 27 Mar 2025 01:00:00 +0100</pubDate>
-    </item>
-
-
-    <item>
       <title>Onboarding SDK: 3.0.0 - 2024/10/22</title>
       <link>https://doc.shareid.ai/shareid-integration-doc/changelog/sdk-web#id-3.0.0-2024-10-22</link>
       <description><![CDATA[🛠 Fixes
